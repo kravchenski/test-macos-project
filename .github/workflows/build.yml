@@ -3,7 +3,7 @@ name: macOS DMG Build and Release
 on:
   push:
     branches:
-      - master # Запускать при пуше в основную ветку
+      - main
 
 permissions:
   contents: write
@@ -37,22 +37,26 @@ jobs:
       - name: 🗂 Подготовить структуру DMG
         run: |
           mkdir -p dmg_build
+          ls -la build/macos/Build/Products/Release/
           cp -R build/macos/Build/Products/Release/*.app dmg_build/
 
       - name: 💾 Создать DMG образ
         run: |
-          cd dmg_build
+          cd dmg_build || exit 1
+          APP_NAME=$(ls *.app)
+          echo "Найдено приложение: $APP_NAME"
+
           create-dmg \
             --volname "MyFlutterApp" \
             --volume-icon "../macos/Runner/Assets.xcassets/AppIcon.appiconset/icon.icns" \
             --window-pos 200 120 \
             --window-size 800 600 \
             --icon-size 100 \
-            --icon "MyFlutterApp.app" 200 190 \
-            --hide-extension "MyFlutterApp.app" \
+            --icon "$APP_NAME" 200 190 \
+            --hide-extension "$APP_NAME" \
             --app-drop-link 600 185 \
             MyFlutterApp.dmg \
-            MyFlutterApp.app
+            "$APP_NAME"
 
       - name: 🌐 Опубликовать как GitHub Release
         uses: svenstaro/upload-release-action@v2
