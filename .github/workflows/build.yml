@@ -47,7 +47,8 @@ jobs:
           echo "app_basename=$APP_BASENAME" >> "$GITHUB_OUTPUT"
 
       - name: 💾 Create DMG image
-        uses: sindresorhus/create-dmg@v3
+        # *** IMPORTANT CHANGE HERE: Updated to v7 ***
+        uses: sindresorhus/create-dmg@v7
         with:
           name: MyFlutterApp.dmg # Output DMG filename
           app-path: ${{ steps.find_app.outputs.app_path }} # Path to your .app bundle
