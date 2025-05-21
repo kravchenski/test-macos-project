@@ -1,9 +1,9 @@
 name: macOS DMG Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*' # Запускать, если есть тег вида v1.0.0
+    push:
+      branches:
+        - master  # Запускать при пуше в ветку main
 
 permissions:
   contents: write
