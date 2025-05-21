@@ -1,9 +1,9 @@
 name: macOS DMG Build and Release
 
 on:
-    push:
-      branches:
-        - master  # Запускать при пуше в ветку main
+  push:
+    branches:
+      - master # Запускать при пуше в основную ветку
 
 permissions:
   contents: write
@@ -29,8 +29,10 @@ jobs:
       - name: 🔨 Собрать приложение macOS (release)
         run: flutter build macos --release
 
-      - name: 🧰 Установить create-dmg
-        run: brew install --cask create-dmg
+      - name: 🧰 Установить Node.js и create-dmg
+        run: |
+          brew install node
+          npm install -g create-dmg
 
       - name: 🗂 Подготовить структуру DMG
         run: |
@@ -57,7 +59,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dmg_build/MyFlutterApp.dmg
-          tag: ${{ github.ref_name }} # Используем тег из git
+          tag: latest-mac-release
           overwrite: true
           body: Автоматически собранное macOS приложение.
           draft: false
