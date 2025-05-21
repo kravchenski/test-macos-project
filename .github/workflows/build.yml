@@ -37,20 +37,32 @@ jobs:
       - name: 🗂 Подготовить структуру DMG
         run: |
           mkdir -p dmg_build
+          # List contents of the Release directory for debugging, good to keep.
           ls -la build/macos/Build/Products/Release/
+          # Ensure you are copying the actual .app bundle. 
+          # The `*.app` might not always yield the correct single app name.
+          # Better to find it dynamically or assume a standard name if possible.
+          # For now, let's assume `*.app` works if there's only one.
           cp -R build/macos/Build/Products/Release/*.app dmg_build/
 
       - name: 💾 Создать DMG образ
         run: |
           cd dmg_build || exit 1
-          APP_NAME=$(ls *.app)
+          # Dynamically find the .app name in case it changes
+          APP_NAME=$(find . -maxdepth 1 -type d -name "*.app" | head -n 1)
+          if [ -z "$APP_NAME" ]; then
+            echo "Error: Could not find .app bundle in dmg_build directory."
+            exit 1
+          fi
+          # Remove the leading './' if present from find output
+          APP_NAME="${APP_NAME#./}" 
           echo "Найдено приложение: $APP_NAME"
 
           create-dmg \
             --volname "MyFlutterApp" \
             --volume-icon "../macos/Runner/Assets.xcassets/AppIcon.appiconset/icon.icns" \
-            --window-pos 200 120 \
-            --window-size 800 600 \
+            --window-pos "200 120" \ # Enclose positions in quotes to ensure they are treated as a single argument
+            --window-size "800 600" \ # Same for window size
             --icon-size 100 \
             --icon "$APP_NAME" 200 190 \
             --hide-extension "$APP_NAME" \
@@ -62,6 +74,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          # The file should be relative to the GITHUB_WORKSPACE root, not dmg_build
           file: dmg_build/MyFlutterApp.dmg
           tag: latest-mac-release
           overwrite: true
