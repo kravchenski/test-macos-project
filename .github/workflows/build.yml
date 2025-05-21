@@ -57,6 +57,7 @@ jobs:
       - name: 💾 Создание образа DMG
         run: |
           # Используем утилиту create-dmg напрямую
+          # Добавлена опция --identity false для пропуска подписи кода
           create-dmg "${{ steps.find_app.outputs.app_path }}" \
             --output MyFlutterApp.dmg \
             --volume-name "MyFlutterApp" \
@@ -64,7 +65,8 @@ jobs:
             --window-size "800 600" \
             --icon-size 100 \
             --app-drop-link-x 600 \
-            --app-drop-link-y 185
+            --app-drop-link-y 185 \
+            --identity false # <-- Добавлена эта строка для отключения подписи кода
           # Опционально: --background 'assets/dmg-background.png' # Если у вас есть фоновое изображение
           
           # Убедимся, что файл DMG существует
