@@ -1,73 +1,78 @@
-name: macOS DMG Build and Release (Alternative)
+name: macOS DMG Build and Release
 
 on:
   push:
     branches:
-      - master
+      - master # Запускать рабочий процесс при пуше в ветку master
 
 permissions:
-  contents: write
+  contents: write # Разрешить запись в репозиторий для создания релиза
 
 jobs:
   build-macos:
-    name: 🎉 Build macOS DMG
-    runs-on: macos-latest
+    name: 🎉 Сборка macOS DMG
+    runs-on: macos-latest # Использовать последнюю версию macOS ранера
 
     steps:
-      - name: 🔍 Checkout code
-        uses: actions/checkout@v4
+      - name: 🔍 Проверка кода
+        uses: actions/checkout@v4 # Извлечь код из репозитория
 
-      - name: 📦 Install Flutter
-        uses: subosito/flutter-action@v2
+      - name: 📦 Установка Flutter SDK
+        uses: subosito/flutter-action@v2 # Использовать стабильную версию действия Flutter
         with:
-          channel: stable
-          architecture: x64
+          channel: stable # Использовать стабильный канал Flutter
+          architecture: x64 # Для архитектуры x64
 
-      - name: 📦 Get dependencies
-        run: flutter pub get
+      - name: 📦 Получение зависимостей Flutter
+        run: flutter pub get # Установить зависимости проекта
 
-      - name: 🔨 Build macOS application (release)
-        run: flutter build macos --release
+      - name: 🔨 Сборка приложения macOS (релизная версия)
+        run: flutter build macos --release # Собрать приложение Flutter для macOS в режиме релиза
 
-      - name: 🗂 Find the built app
-        id: find_app
+      - name: 🗂 Поиск собранного приложения
+        id: find_app # Присвоить ID этому шагу для доступа к его выводам
         run: |
-          # The built app is usually in build/macos/Build/Products/Release/
-          # We need to find its exact name (e.g., 'Runner.app' or 'YourAppName.app')
+          # Собранное приложение обычно находится в build/macos/Build/Products/Release/
+          # Нам нужно найти его точное имя (например, 'Runner.app' или 'YourAppName.app')
           APP_DIR="build/macos/Build/Products/Release/"
+          # Найти первый каталог, заканчивающийся на ".app"
           APP_NAME=$(find "$APP_DIR" -maxdepth 1 -type d -name "*.app" | head -n 1)
+          
           if [ -z "$APP_NAME" ]; then
-            echo "Error: Could not find .app bundle in $APP_DIR"
+            echo "Ошибка: Не удалось найти пакет .app в $APP_DIR"
             exit 1
           fi
-          # Remove the leading path part to get just the app bundle name
+          
+          # Получить только базовое имя пакета приложения (например, "Runner.app")
           APP_BASENAME=$(basename "$APP_NAME")
-          echo "Found application: $APP_BASENAME"
+          
+          echo "Найденное приложение: $APP_BASENAME"
+          # Установить выводы для использования в последующих шагах
           echo "app_path=$APP_NAME" >> "$GITHUB_OUTPUT"
           echo "app_basename=$APP_BASENAME" >> "$GITHUB_OUTPUT"
 
-      - name: 💾 Create DMG image
-        # *** IMPORTANT CHANGE HERE: Updated to v7 ***
+      - name: 💾 Создание образа DMG
+        # Используем sindresorhus/create-dmg@v7, это последняя стабильная версия
         uses: sindresorhus/create-dmg@v7
         with:
-          name: MyFlutterApp.dmg # Output DMG filename
-          app-path: ${{ steps.find_app.outputs.app_path }} # Path to your .app bundle
-          volume-name: MyFlutterApp
-          background: # Optional: path to a background image, e.g., 'assets/dmg-background.png'
-          window-pos: '200 120'
-          window-size: '800 600'
-          icon-size: 100
-          app-drop-link-x: 600 # X coordinate for the Applications drop link
-          app-drop-link-y: 185 # Y coordinate for the Applications drop link
-          # You can add more options from create-dmg documentation here
+          name: MyFlutterApp.dmg # Имя выходного файла DMG
+          app-path: ${{ steps.find_app.outputs.app_path }} # Путь к вашему пакету .app, полученный из предыдущего шага
+          volume-name: MyFlutterApp # Имя тома, которое будет отображаться при монтировании DMG
+          # background: 'assets/dmg-background.png' # Опционально: путь к фоновому изображению для окна DMG
+          window-pos: '200 120' # Позиция окна DMG
+          window-size: '800 600' # Размер окна DMG
+          icon-size: 100 # Размер иконки приложения внутри окна DMG
+          app-drop-link-x: 600 # Координата X для ссылки "Приложения" (куда перетаскивать приложение)
+          app-drop-link-y: 185 # Координата Y для ссылки "Приложения"
+          # Вы можете добавить больше опций из документации create-dmg здесь
 
-      - name: 🌐 Publish as GitHub Release
-        uses: svenstaro/upload-release-action@v2
+      - name: 🌐 Публикация в GitHub Release
+        uses: svenstaro/upload-release-action@v2 # Действие для загрузки файлов в релиз GitHub
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: MyFlutterApp.dmg # This is the name of the DMG created by the previous step
-          tag: latest-mac-release
-          overwrite: true
-          body: Автоматически собранное macOS приложение.
-          draft: false
-          prerelease: false
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Токен для аутентификации в GitHub
+          file: MyFlutterApp.dmg # Файл DMG, созданный на предыдущем шаге
+          tag: latest-mac-release # Тег релиза. Вы можете изменить его на динамический, например, v1.0.0
+          overwrite: true # Перезаписывать существующий актив, если тег уже существует
+          body: Автоматически собранное macOS приложение. # Описание релиза
+          draft: false # Опубликовать релиз сразу (true для черновика)
+          prerelease: false # Не помечать как предварительный релиз
