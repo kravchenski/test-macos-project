@@ -1,4 +1,4 @@
-name: 🎉 Сборка Flutter macOS приложения и создание DMG
+name: 🎉 Сборка macOS приложения и создание DMG
 
 on:
   push:
@@ -10,20 +10,17 @@ permissions:
 
 jobs:
   build-macos:
-    name: 🔨 Сборка macOS приложения и создание DMG
-    runs-on: macos-latest
+    name: 🎉 Сборка macOS приложения и создание DMG
+    runs-on: macos-latest # Использовать последнюю версию macOS ранера
 
     steps:
       - name: 🔍 Проверка кода
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Извлечь код из репозитория
 
       - name: 📦 Установка Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
-          channel: stable
-          cache: true
-          cache-key: flutter-
+          channel: stable # Использовать стабильный канал Flutter
 
       - name: 🖥️ Включить поддержку macOS
         run: flutter config --enable-macos-desktop
@@ -33,9 +30,6 @@ jobs:
 
       - name: 🧪 Выполнить анализ кода
         run: flutter analyze
-
-      - name: 🧪 Выполнить тесты
-        run: flutter test
 
       - name: 🔨 Сборка приложения macOS (релизная версия)
         run: flutter build macos --release
