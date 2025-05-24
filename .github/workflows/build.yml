@@ -1,4 +1,4 @@
-name: macOS DMG Build and Release
+name: 🎉 Сборка Flutter macOS приложения и создание DMG
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-macos:
-    name: 🎉 Сборка macOS приложения и создание DMG
+    name: 🔨 Сборка macOS приложения и создание DMG
     runs-on: macos-latest # Использовать последнюю версию macOS ранера
 
     steps:
@@ -18,50 +18,50 @@ jobs:
         uses: actions/checkout@v4 # Извлечь код из репозитория
 
       - name: 📦 Установка Flutter SDK
-        uses: subosito/flutter-action@v2 # Использовать стабильную версию действия Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: stable # Использовать стабильный канал Flutter
-          architecture: x64 # <-- Исправлено: с x66 на x64
-          
+          flutter-version: '3.24.x'
+          channel: stable
+          cache: true
+          cache-key: flutter-
+
+      - name: 🖥️ Включить поддержку macOS
+        run: flutter config --enable-macos-desktop
+
       - name: 📦 Получение зависимостей Flutter
         run: flutter pub get # Установить зависимости проекта
+
+      - name: 🧪 Выполнить анализ кода
+        run: flutter analyze
+
+      - name: 🧪 Выполнить тесты
+        run: flutter test
 
       - name: 🔨 Сборка приложения macOS (релизная версия)
         run: flutter build macos --release # Собрать приложение Flutter для macOS в режиме релиза
 
       - name: 🗂 Поиск собранного приложения
-        id: find_app # Присвоить ID этому шагу для доступа к его выводам
+        id: find_app
         run: |
-          # Собранное приложение обычно находится в build/macos/Build/Products/Release/
-          # Нам нужно найти его точное имя (например, 'Runner.app' или 'YourAppName.app')
           APP_DIR="build/macos/Build/Products/Release/"
-          # Найти первый каталог, заканчивающийся на ".app"
           APP_NAME=$(find "$APP_DIR" -maxdepth 1 -type d -name "*.app" | head -n 1)
-          
+
           if [ -z "$APP_NAME" ]; then
             echo "Ошибка: Не удалось найти пакет .app в $APP_DIR"
             exit 1
           fi
-          
-          # Получить только базовое имя пакета приложения (например, "Runner.app")
+
           APP_BASENAME=$(basename "$APP_NAME")
-          
-          echo "Найденное приложение: $APP_BASENAME"
-          # Установить выводы для использования в последующих шагах
           echo "app_path=$APP_NAME" >> "$GITHUB_OUTPUT"
           echo "app_basename=$APP_BASENAME" >> "$GITHUB_OUTPUT"
 
       - name: ⬇️ Установка appdmg CLI
-        run: npm install --global appdmg # Установить утилиту appdmg глобально через npm
+        run: npm install --global appdmg
 
       - name: 💾 Создание образа DMG с помощью appdmg
         run: |
-          # Динамически создаем JSON-конфигурацию для appdmg
-          # Путь к приложению должен быть относительным к текущей рабочей директории
-          # (которая является корневой директорией репозитория)
           APP_PATH_RELATIVE_TO_WORKSPACE="${{ steps.find_app.outputs.app_path }}"
           
-          # Создаем временный JSON-файл для конфигурации appdmg
           cat <<EOF > appdmg.json
           {
             "title": "My Flutter App",
@@ -72,24 +72,27 @@ jobs:
             "format": "ULFO"
           }
           EOF
-          
-          # Вызываем appdmg, передавая путь к JSON-файлу и путь к выходному DMG
-          # Опция --no-internet-enable предотвращает попытки appdmg доступа к интернету для проверки подписи
+
           appdmg appdmg.json MyFlutterApp.dmg --no-internet-enable
-          
-          # Убедимся, что файл DMG существует
+
           if [ ! -f MyFlutterApp.dmg ]; then
             echo "Ошибка: Файл MyFlutterApp.dmg не был создан."
             exit 1
           fi
 
-      - name: 🌐 Публикация в GitHub Release
-        uses: svenstaro/upload-release-action@v2 # Действие для загрузки файлов в релиз GitHub
+      - name: 📤 Архивирование DMG
+        uses: actions/upload-artifact@v3
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Токен для аутентификации в GitHub
-          file: MyFlutterApp.dmg # Файл DMG, созданный на предыдущем шаге
-          tag: latest-mac-release # Тег релиза. Вы можете изменить его на динамический, например, v1.0.0
-          overwrite: true # Перезаписывать существующий актив, если тег уже существует
-          body: Автоматически собранное macOS приложение (DMG). # Описание релиза
-          draft: false # Опубликовать релиз сразу (true для черновика)
-          prerelease: false # Не помечать как предварительный релиз
+          name: MyFlutterApp-macOS
+          path: MyFlutterApp.dmg
+
+      - name: 🌐 Публикация в GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: MyFlutterApp.dmg
+          tag: latest-mac-release
+          overwrite: true
+          body: Автоматически собранное macOS приложение (DMG).
+          draft: false
+          prerelease: false
