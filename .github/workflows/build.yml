@@ -11,11 +11,11 @@ permissions:
 jobs:
   build-macos:
     name: 🔨 Сборка macOS приложения и создание DMG
-    runs-on: macos-latest # Использовать последнюю версию macOS ранера
+    runs-on: macos-latest
 
     steps:
       - name: 🔍 Проверка кода
-        uses: actions/checkout@v4 # Извлечь код из репозитория
+        uses: actions/checkout@v4
 
       - name: 📦 Установка Flutter SDK
         uses: subosito/flutter-action@v2
@@ -29,7 +29,7 @@ jobs:
         run: flutter config --enable-macos-desktop
 
       - name: 📦 Получение зависимостей Flutter
-        run: flutter pub get # Установить зависимости проекта
+        run: flutter pub get
 
       - name: 🧪 Выполнить анализ кода
         run: flutter analyze
@@ -38,7 +38,7 @@ jobs:
         run: flutter test
 
       - name: 🔨 Сборка приложения macOS (релизная версия)
-        run: flutter build macos --release # Собрать приложение Flutter для macOS в режиме релиза
+        run: flutter build macos --release
 
       - name: 🗂 Поиск собранного приложения
         id: find_app
@@ -79,12 +79,6 @@ jobs:
             echo "Ошибка: Файл MyFlutterApp.dmg не был создан."
             exit 1
           fi
-
-      - name: 📤 Архивирование DMG
-        uses: actions/upload-artifact@v3
-        with:
-          name: MyFlutterApp-macOS
-          path: MyFlutterApp.dmg
 
       - name: 🌐 Публикация в GitHub Release
         uses: svenstaro/upload-release-action@v2
