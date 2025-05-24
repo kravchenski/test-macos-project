@@ -10,7 +10,7 @@ on:
 env:
   BUILD_NUMBER: "1"
   BUILD_VERSION: "1.0.0"
-  FLUTTER_VERSION: '3.22.2'
+  FLUTTER_VERSION: '3.24.x'
 
 jobs:
   build-macos:
